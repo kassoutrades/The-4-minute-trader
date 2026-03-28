@@ -2,89 +2,84 @@ import streamlit as st
 import time
 import streamlit.components.v1 as components
 
-# إعدادات الشاشة الكاملة وإخفاء قوائم ستريمليت الافتراضية
+# إعدادات الشاشة الكاملة وإخفاء هوية Streamlit تماماً
 st.set_page_config(page_title="KASSOUTRADES | Ultra Terminal", layout="wide", initial_sidebar_state="collapsed")
 
-# --- CSS السحري (تصميم من كوكب آخر) ---
+# --- CSS هندسة الواجهة (Ultra-Dark UI) ---
 st.markdown("""
     <style>
-    /* خلفية داكنة مع لمسات إضاءة نيون */
-    .stApp {
-        background: #020202;
-        background-image: radial-gradient(circle at 20% 30%, #1a1a1a 0%, #020202 100%);
-    }
-
-    /* إخفاء عناصر ستريمليت المزعجة */
+    /* إخفاء القوائم الافتراضية لتركيز كامل على المنصة */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-
-    /* الحاويات الزجاجية (Glass Cards) */
-    .glass-card {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(212, 175, 55, 0.1);
-        border-radius: 20px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+    
+    .stApp {
+        background: #020406;
+        color: #e0e0e0;
     }
 
-    /* أزرار النيون (Neon Buttons) */
+    /* الحاويات الزجاجية (Glassmorphism) */
+    .trade-container {
+        background: rgba(13, 17, 23, 0.8);
+        border: 1px solid rgba(212, 175, 55, 0.15);
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    /* تصميم أزرار التنفيذ الفوري */
     .stButton > button {
         width: 100%;
-        border-radius: 12px !important;
-        height: 60px !important;
-        font-size: 18px !important;
-        font-weight: 900 !important;
+        border-radius: 8px !important;
+        height: 55px !important;
+        font-weight: 800 !important;
         text-transform: uppercase;
-        letter-spacing: 2px;
-        transition: 0.4s all ease !important;
         border: none !important;
+        transition: 0.3s ease-in-out !important;
     }
 
-    /* زر الشراء المتوهج */
-    div[data-testid="stVerticalBlock"] > div:nth-child(2) button {
-        background: linear-gradient(90deg, #00ff87 0%, #60efff 100%) !important;
+    /* زر الشراء النيوني */
+    div[data-testid="stVerticalBlock"] > div:has(button:contains("BUY")) button {
+        background: linear-gradient(90deg, #00c853, #64ffda) !important;
         color: #000 !important;
-        box-shadow: 0px 0px 20px rgba(0, 255, 135, 0.3) !important;
+        box-shadow: 0 0 15px rgba(0, 200, 83, 0.3) !important;
     }
 
-    /* زر البيع المتوهج */
-    div[data-testid="stVerticalBlock"] > div:nth-child(4) button {
-        background: linear-gradient(90deg, #f12711 0%, #f5af19 100%) !important;
+    /* زر البيع النيوني */
+    div[data-testid="stVerticalBlock"] > div:has(button:contains("SELL")) button {
+        background: linear-gradient(90deg, #ff1744, #f50057) !important;
         color: #fff !important;
-        box-shadow: 0px 0px 20px rgba(241, 39, 17, 0.3) !important;
+        box-shadow: 0 0 15px rgba(255, 23, 68, 0.3) !important;
     }
 
-    /* مؤقت القناص الرقمي */
-    .timer-display {
-        font-family: 'Courier New', Courier, monospace;
-        font-size: 48px;
-        font-weight: bold;
+    /* مؤقت القناص الاحترافي */
+    .timer-text {
+        font-family: 'Monaco', monospace;
+        font-size: 3rem;
         color: #D4AF37;
         text-align: center;
-        text-shadow: 0px 0px 15px rgba(212, 175, 55, 0.5);
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- الهيدر الاحترافي (بدون خلفية ستريمليت) ---
-st.markdown("""
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0px;">
-        <h2 style="color: #D4AF37; letter-spacing: 3px; font-weight: 900;">🦅 KASSOUTRADES <span style="color: white; font-weight: 100;">TERMINAL</span></h2>
-        <div style="background: rgba(212,175,55,0.1); padding: 5px 15px; border-radius: 50px; border: 1px solid #D4AF37; color: #D4AF37; font-size: 12px;">SERVER: LIVE 🟢</div>
-    </div>
-    """, unsafe_allow_html=True)
+# --- الهيدر (Topbar) ---
+cols = st.columns([2, 5, 2])
+with cols[0]:
+    st.markdown("<h2 style='color: #D4AF37; margin:0;'>🦅 KASSOUTRADES</h2>", unsafe_allow_html=True)
+with cols[2]:
+    st.markdown("<div style='text-align:right; color:#00ff87; font-size:12px;'>● CONNECTED TO DATA CENTER</div>", unsafe_allow_html=True)
 
-# --- توزيع المساحات (Main Layout) ---
-col_left, col_right = st.columns([4, 1.2], gap="medium")
+st.markdown("---")
+
+# --- توزيع المساحات: الشارت ومركز العمليات ---
+col_left, col_right = st.columns([4, 1.2])
 
 with col_left:
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    # دمج TradingView مع تفعيل "Full Toolbar" والمؤشرات
+    # الشارت المدمج مع خاصية Bar Replay
+    st.markdown('<div class="trade-container">', unsafe_allow_html=True)
     tv_code = """
-    <div style="height: 700px;">
+    <div style="height: 720px;">
         <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
         <script type="text/javascript">
         new TradingView.widget({
@@ -95,45 +90,49 @@ with col_left:
           "style": "1",
           "locale": "ar",
           "toolbar_bg": "#f1f3f6",
-          "enable_publishing": false,
           "withdateranges": true,
           "hide_side_toolbar": false,
           "allow_symbol_change": true,
+          "save_image": true,
           "studies": ["RSI@tv-basicstudies", "MASimple@tv-basicstudies"],
-          "container_id": "tv_chart"
+          "container_id": "tv_chart_main"
         });
         </script>
-        <div id="tv_chart"></div>
+        <div id="tv_chart_main"></div>
     </div>
     """
-    components.html(tv_code, height=710)
+    components.html(tv_code, height=730)
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col_right:
-    # لوحة الأوامر
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown("<h4 style='text-align: center; color: white;'>EXECUTION</h4>", unsafe_allow_html=True)
-    st.number_input("QUANTITY", value=0.10, step=0.01)
-    st.button("BUY / LONG")
+    # لوحة التحكم في التنفيذ (Execution Desk)
+    st.markdown('<div class="trade-container">', unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#888; font-size:12px;'>ORDER TYPE: MARKET</p>", unsafe_allow_html=True)
+    lot = st.number_input("LOT SIZE", value=0.10, step=0.01)
+    
+    if st.button("BUY / LONG"):
+        st.toast("ORDER EXECUTED: BUY AT MARKET")
+    
     st.write("")
-    st.button("SELL / SHORT")
+    if st.button("SELL / SHORT"):
+        st.toast("ORDER EXECUTED: SELL AT MARKET")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # مؤقت القناص
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-size: 12px; color: #888;'>PREDATOR TIMER</p>", unsafe_allow_html=True)
-    if st.button("START 4-MIN SCAN"):
-        t_display = st.empty()
+    # مؤقت القناص (Predator Timer)
+    st.markdown('<div class="trade-container" style="margin-top:20px;">', unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#D4AF37; margin-bottom:0;'>4-MIN SCANNER</p>", unsafe_allow_html=True)
+    if st.button("ACTIVATE SCAN"):
+        placeholder = st.empty()
         for i in range(240, -1, -1):
             m, s = divmod(i, 60)
-            t_display.markdown(f'<p class="timer-display">{m:02d}:{s:02d}</p>', unsafe_allow_html=True)
+            placeholder.markdown(f'<p class="timer-text">{m:02d}:{s:02d}</p>', unsafe_allow_html=True)
             time.sleep(1)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# الجورنال أسفل الشاشة بشكل ممتد
-st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-st.subheader("📒 JOURNAL LOGS")
-st.text_area("Analyze your entry psychology here...", placeholder="Why now? What's the plan?")
-if st.button("SAVE TO DATABASE"):
-    st.success("Entry Secured.")
+# الجورنال الاحترافي في الأسفل
+st.markdown('<div class="trade-container" style="margin-top:20px;">', unsafe_allow_html=True)
+st.subheader("📒 PRO JOURNAL LOGS")
+notes = st.text_area("Analyze the 'Bar Replay' findings and entry psychology...", height=150)
+if st.button("COMMIT TO DATABASE"):
+    st.success("Analysis Archived Successfully.")
 st.markdown('</div>', unsafe_allow_html=True)
