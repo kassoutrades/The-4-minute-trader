@@ -2,85 +2,81 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # إعدادات الصفحة
-st.set_page_config(page_title="KASSOUTRADES | Pro Watchlist", layout="wide")
+st.set_page_config(page_title="KASSOUTRADES LIVE", layout="wide")
 
-# --- CSS لتنسيق الـ Watchlist بحال TradingView ---
+# --- 1. الذاكرة الداخلية للتطبيق (Session State) ---
+if 'current_symbol' not in st.session_state:
+    st.session_state.current_symbol = "FX:XAUUSD"  # الرمز الافتراضي (الذهب)
+if 'trades_history' not in st.session_state:
+    st.session_state.trades_history = []  # سجل الصفقات
+
+# --- 2. دالة تغيير العملة (Update Chart) ---
+def change_market(new_symbol):
+    st.session_state.current_symbol = new_symbol
+
+# --- 3. تصميم الواجهة (CSS) ---
 st.markdown("""
     <style>
     .stApp { background-color: #040608; }
-    .watchlist-container {
-        background: #131722;
-        border-radius: 10px;
-        padding: 10px;
-        border: 1px solid #2a2e39;
+    .market-btn {
+        background: #131722; border: 1px solid #2a2e39; color: white;
+        width: 100%; padding: 10px; text-align: left; border-radius: 5px; margin-bottom: 5px;
     }
-    .market-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 12px 8px;
-        border-bottom: 1px solid #2a2e39;
-        transition: 0.3s;
-    }
-    .market-item:hover { background: #1e222d; cursor: pointer; }
-    .symbol-name { font-weight: bold; color: #d1d4dc; }
-    .price-up { color: #089981; }
-    .price-down { color: #f23645; }
-    .gold-glow { color: #D4AF37; font-weight: 900; text-align: center; margin-bottom: 20px; }
+    .market-btn:hover { border-color: #D4AF37; cursor: pointer; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- الهيكل الرئيسي (Layout) ---
-col_watch, col_chart, col_exec = st.columns([1.2, 3, 1], gap="small")
+# --- 4. توزيع المحتوى ---
+col_watch, col_chart, col_exec = st.columns([1, 3, 1])
 
+# --- القائمة الجانبية (Watchlist التفاعلية) ---
 with col_watch:
-    st.markdown('<h3 class="gold-glow">WATCHLIST 📊</h3>', unsafe_allow_html=True)
+    st.markdown("<h3 style='color:#D4AF37;'>WATCHLIST</h3>", unsafe_allow_html=True)
     
-    # محاكاة قائمة المراقبة (Watchlist)
-    markets = [
-        {"name": "NQ1!", "desc": "Nasdaq 100", "price": "24,291.75", "change": "-0.3%", "up": False},
-        {"name": "NAS100", "desc": "NASDAQ 100 Index", "price": "23,068.6", "change": "-2.34%", "up": False},
-        {"name": "XAUUSD", "desc": "Gold Spot", "price": "4,493.68", "change": "+2.64%", "up": True},
-        {"name": "BTCUSDT", "desc": "Bitcoin", "price": "66,376.91", "change": "-0.15%", "up": False},
-    ]
-    
-    st.markdown('<div class="watchlist-container">', unsafe_allow_html=True)
-    for m in markets:
-        color_class = "price-up" if m["up"] else "price-down"
-        st.markdown(f"""
-            <div class="market-item">
-                <div>
-                    <div class="symbol-name">{m['name']}</div>
-                    <div style="font-size: 10px; color: #868993;">{m['desc']}</div>
-                </div>
-                <div style="text-align: right;">
-                    <div class="symbol-name">{m['price']}</div>
-                    <div class="{color_class}" style="font-size: 12px;">{m['change']}</div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.write("")
-    st.button("+ Add Symbol", use_container_width=True)
+    # أزرار حقيقية لتغيير السوق
+    if st.button("🟡 GOLD (XAUUSD)", use_container_width=True):
+        change_market("FX:XAUUSD")
+    if st.button("🔵 NASDAQ (NAS100)", use_container_width=True):
+        change_market("CAPITALCOM:US100")
+    if st.button("₿ BITCOIN (BTCUSDT)", use_container_width=True):
+        change_market("BINANCE:BTCUSDT")
+    if st.button("🍎 APPLE (AAPL)", use_container_width=True):
+        change_market("NASDAQ:AAPL")
 
+# --- منطقة الشارت (تتغير ديناميكياً) ---
 with col_chart:
-    # الشارت الرئيسي
-    tv_code = """
-    <div style="height: 650px;">
+    st.subheader(f"📊 {st.session_state.current_symbol} Analysis")
+    
+    # الكود ديال TradingView كياخد الرمز من الذاكرة
+    tv_code = f"""
+    <div style="height: 600px;">
         <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
         <script type="text/javascript">
-        new TradingView.widget({
-          "autosize": true, "symbol": "FX:XAUUSD", "interval": "15",
-          "theme": "dark", "style": "1", "locale": "ar", "container_id": "tv_main"
-        });
+        new TradingView.widget({{
+          "autosize": true, "symbol": "{st.session_state.current_symbol}", 
+          "interval": "15", "theme": "dark", "style": "1", "locale": "ar", "container_id": "tv_main"
+        }});
         </script><div id="tv_main"></div>
     </div> """
-    components.html(tv_code, height=660)
+    components.html(tv_code, height=610)
 
+# --- لوحة التنفيذ (Execution) ---
 with col_exec:
-    st.markdown("<h4 style='color: white; text-align:center;'>EXECUTION</h4>", unsafe_allow_html=True)
-    st.number_input("LOT", value=0.10)
-    st.button("BUY", key="b1")
-    st.button("SELL", key="s1")
+    st.markdown("<h4 style='text-align:center;'>EXECUTION</h4>", unsafe_allow_html=True)
+    lot = st.number_input("LOT", value=0.10, step=0.01)
+    
+    # تفعيل أزرار البيع والشراء
+    if st.button("BUY 🟢", use_container_width=True):
+        new_trade = {"type": "BUY", "symbol": st.session_state.current_symbol, "lot": lot, "time": "Now"}
+        st.session_state.trades_history.append(new_trade)
+        st.toast(f"Executed BUY on {st.session_state.current_symbol}")
+
+    if st.button("SELL 🔴", use_container_width=True):
+        new_trade = {"type": "SELL", "symbol": st.session_state.current_symbol, "lot": lot, "time": "Now"}
+        st.session_state.trades_history.append(new_trade)
+        st.toast(f"Executed SELL on {st.session_state.current_symbol}")
+
     st.write("---")
-    st.markdown("<p style='text-align:center; font-size:10px;'>KASSOUTRADES V3.0</p>", unsafe_allow_html=True)
+    st.markdown("**Recent Trades:**")
+    for trade in reversed(st.session_state.trades_history[-3:]):
+        st.write(f"{trade['type']} {trade['symbol']} ({trade['lot']})")
