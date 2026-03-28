@@ -1,138 +1,86 @@
 import streamlit as st
-import time
 import streamlit.components.v1 as components
 
-# إعدادات الشاشة الكاملة وإخفاء هوية Streamlit تماماً
-st.set_page_config(page_title="KASSOUTRADES | Ultra Terminal", layout="wide", initial_sidebar_state="collapsed")
+# إعدادات الصفحة
+st.set_page_config(page_title="KASSOUTRADES | Pro Watchlist", layout="wide")
 
-# --- CSS هندسة الواجهة (Ultra-Dark UI) ---
+# --- CSS لتنسيق الـ Watchlist بحال TradingView ---
 st.markdown("""
     <style>
-    /* إخفاء القوائم الافتراضية لتركيز كامل على المنصة */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    .stApp {
-        background: #020406;
-        color: #e0e0e0;
+    .stApp { background-color: #040608; }
+    .watchlist-container {
+        background: #131722;
+        border-radius: 10px;
+        padding: 10px;
+        border: 1px solid #2a2e39;
     }
-
-    /* الحاويات الزجاجية (Glassmorphism) */
-    .trade-container {
-        background: rgba(13, 17, 23, 0.8);
-        border: 1px solid rgba(212, 175, 55, 0.15);
-        border-radius: 12px;
-        padding: 15px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    .market-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 8px;
+        border-bottom: 1px solid #2a2e39;
+        transition: 0.3s;
     }
-
-    /* تصميم أزرار التنفيذ الفوري */
-    .stButton > button {
-        width: 100%;
-        border-radius: 8px !important;
-        height: 55px !important;
-        font-weight: 800 !important;
-        text-transform: uppercase;
-        border: none !important;
-        transition: 0.3s ease-in-out !important;
-    }
-
-    /* زر الشراء النيوني */
-    div[data-testid="stVerticalBlock"] > div:has(button:contains("BUY")) button {
-        background: linear-gradient(90deg, #00c853, #64ffda) !important;
-        color: #000 !important;
-        box-shadow: 0 0 15px rgba(0, 200, 83, 0.3) !important;
-    }
-
-    /* زر البيع النيوني */
-    div[data-testid="stVerticalBlock"] > div:has(button:contains("SELL")) button {
-        background: linear-gradient(90deg, #ff1744, #f50057) !important;
-        color: #fff !important;
-        box-shadow: 0 0 15px rgba(255, 23, 68, 0.3) !important;
-    }
-
-    /* مؤقت القناص الاحترافي */
-    .timer-text {
-        font-family: 'Monaco', monospace;
-        font-size: 3rem;
-        color: #D4AF37;
-        text-align: center;
-        text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
-    }
+    .market-item:hover { background: #1e222d; cursor: pointer; }
+    .symbol-name { font-weight: bold; color: #d1d4dc; }
+    .price-up { color: #089981; }
+    .price-down { color: #f23645; }
+    .gold-glow { color: #D4AF37; font-weight: 900; text-align: center; margin-bottom: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- الهيدر (Topbar) ---
-cols = st.columns([2, 5, 2])
-with cols[0]:
-    st.markdown("<h2 style='color: #D4AF37; margin:0;'>🦅 KASSOUTRADES</h2>", unsafe_allow_html=True)
-with cols[2]:
-    st.markdown("<div style='text-align:right; color:#00ff87; font-size:12px;'>● CONNECTED TO DATA CENTER</div>", unsafe_allow_html=True)
+# --- الهيكل الرئيسي (Layout) ---
+col_watch, col_chart, col_exec = st.columns([1.2, 3, 1], gap="small")
 
-st.markdown("---")
+with col_watch:
+    st.markdown('<h3 class="gold-glow">WATCHLIST 📊</h3>', unsafe_allow_html=True)
+    
+    # محاكاة قائمة المراقبة (Watchlist)
+    markets = [
+        {"name": "NQ1!", "desc": "Nasdaq 100", "price": "24,291.75", "change": "-0.3%", "up": False},
+        {"name": "NAS100", "desc": "NASDAQ 100 Index", "price": "23,068.6", "change": "-2.34%", "up": False},
+        {"name": "XAUUSD", "desc": "Gold Spot", "price": "4,493.68", "change": "+2.64%", "up": True},
+        {"name": "BTCUSDT", "desc": "Bitcoin", "price": "66,376.91", "change": "-0.15%", "up": False},
+    ]
+    
+    st.markdown('<div class="watchlist-container">', unsafe_allow_html=True)
+    for m in markets:
+        color_class = "price-up" if m["up"] else "price-down"
+        st.markdown(f"""
+            <div class="market-item">
+                <div>
+                    <div class="symbol-name">{m['name']}</div>
+                    <div style="font-size: 10px; color: #868993;">{m['desc']}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div class="symbol-name">{m['price']}</div>
+                    <div class="{color_class}" style="font-size: 12px;">{m['change']}</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.write("")
+    st.button("+ Add Symbol", use_container_width=True)
 
-# --- توزيع المساحات: الشارت ومركز العمليات ---
-col_left, col_right = st.columns([4, 1.2])
-
-with col_left:
-    # الشارت المدمج مع خاصية Bar Replay
-    st.markdown('<div class="trade-container">', unsafe_allow_html=True)
+with col_chart:
+    # الشارت الرئيسي
     tv_code = """
-    <div style="height: 720px;">
+    <div style="height: 650px;">
         <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
         <script type="text/javascript">
         new TradingView.widget({
-          "autosize": true,
-          "symbol": "BINANCE:BTCUSDT",
-          "interval": "15",
-          "theme": "dark",
-          "style": "1",
-          "locale": "ar",
-          "toolbar_bg": "#f1f3f6",
-          "withdateranges": true,
-          "hide_side_toolbar": false,
-          "allow_symbol_change": true,
-          "save_image": true,
-          "studies": ["RSI@tv-basicstudies", "MASimple@tv-basicstudies"],
-          "container_id": "tv_chart_main"
+          "autosize": true, "symbol": "FX:XAUUSD", "interval": "15",
+          "theme": "dark", "style": "1", "locale": "ar", "container_id": "tv_main"
         });
-        </script>
-        <div id="tv_chart_main"></div>
-    </div>
-    """
-    components.html(tv_code, height=730)
-    st.markdown('</div>', unsafe_allow_html=True)
+        </script><div id="tv_main"></div>
+    </div> """
+    components.html(tv_code, height=660)
 
-with col_right:
-    # لوحة التحكم في التنفيذ (Execution Desk)
-    st.markdown('<div class="trade-container">', unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; color:#888; font-size:12px;'>ORDER TYPE: MARKET</p>", unsafe_allow_html=True)
-    lot = st.number_input("LOT SIZE", value=0.10, step=0.01)
-    
-    if st.button("BUY / LONG"):
-        st.toast("ORDER EXECUTED: BUY AT MARKET")
-    
-    st.write("")
-    if st.button("SELL / SHORT"):
-        st.toast("ORDER EXECUTED: SELL AT MARKET")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # مؤقت القناص (Predator Timer)
-    st.markdown('<div class="trade-container" style="margin-top:20px;">', unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; color:#D4AF37; margin-bottom:0;'>4-MIN SCANNER</p>", unsafe_allow_html=True)
-    if st.button("ACTIVATE SCAN"):
-        placeholder = st.empty()
-        for i in range(240, -1, -1):
-            m, s = divmod(i, 60)
-            placeholder.markdown(f'<p class="timer-text">{m:02d}:{s:02d}</p>', unsafe_allow_html=True)
-            time.sleep(1)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# الجورنال الاحترافي في الأسفل
-st.markdown('<div class="trade-container" style="margin-top:20px;">', unsafe_allow_html=True)
-st.subheader("📒 PRO JOURNAL LOGS")
-notes = st.text_area("Analyze the 'Bar Replay' findings and entry psychology...", height=150)
-if st.button("COMMIT TO DATABASE"):
-    st.success("Analysis Archived Successfully.")
-st.markdown('</div>', unsafe_allow_html=True)
+with col_exec:
+    st.markdown("<h4 style='color: white; text-align:center;'>EXECUTION</h4>", unsafe_allow_html=True)
+    st.number_input("LOT", value=0.10)
+    st.button("BUY", key="b1")
+    st.button("SELL", key="s1")
+    st.write("---")
+    st.markdown("<p style='text-align:center; font-size:10px;'>KASSOUTRADES V3.0</p>", unsafe_allow_html=True)
